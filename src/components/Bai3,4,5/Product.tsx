@@ -9,9 +9,16 @@ type Product = {
   imageUrl: string;
 };
 
+type Errors = {
+  name?: string;
+  price?: string;
+  imageUrl?: string;
+};
+
 export default function Product() {
   const [products, setProducts] = useState<Product[]>([]);
   const [file, setFile] = useState<File | null>(null);
+  const [errors, setErrors] = useState<Errors>({});
   const [newProduct, setNewProduct] = useState<Product>({
     id: 0,
     name: "",
@@ -73,15 +80,35 @@ export default function Product() {
     const { name, value } = event.target;
     setNewProduct((prevProduct) => ({
       ...prevProduct,
-      [name]: value,
+      [name]: name === "price" ? Number(value) : value,
     }));
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    // Validate
+    const validationErrors: Errors = {};
+    if (!newProduct.name.trim()) {
+      validationErrors.name = "Tên sản phẩm không được để trống.";
+    }
+    if (!newProduct.price || newProduct.price <= 0) {
+      validationErrors.price = "Giá sản phẩm phải lớn hơn 0.";
+    }
+    if (!file) {
+      validationErrors.imageUrl = "Vui lòng chọn ảnh sản phẩm.";
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     const imageUrl = await handleUpload();
 
     if (!imageUrl) {
+      setErrors({ imageUrl: "Tải ảnh lên thất bại." });
       return;
     }
 
@@ -101,6 +128,7 @@ export default function Product() {
       imageUrl: "",
     });
     setFile(null);
+    setErrors({});
   };
 
   const handleDelete = (id: number) => {
@@ -125,7 +153,9 @@ export default function Product() {
             value={newProduct.name}
             onChange={handleChange}
           />
+          {errors.name && <p className="text-danger">{errors.name}</p>}
         </div>
+
         <div>
           <label htmlFor="price">Giá sản phẩm</label>
           <input
@@ -137,7 +167,9 @@ export default function Product() {
             value={newProduct.price}
             onChange={handleChange}
           />
+          {errors.price && <p className="text-danger">{errors.price}</p>}
         </div>
+
         <div>
           <label htmlFor="description">Mô tả</label>
           <textarea
@@ -158,7 +190,10 @@ export default function Product() {
             id="img"
             name="img"
             hidden
-            onChange={(event) => setFile(event.target.files?.[0] || null)}
+            onChange={(event) => {
+              setFile(event.target.files?.[0] || null);
+              setErrors((prev) => ({ ...prev, imageUrl: undefined }));
+            }}
           />
           {file && (
             <div className="mt-2">
@@ -179,6 +214,7 @@ export default function Product() {
             <span>+</span>
             <p>Upload</p>
           </label>
+          {errors.imageUrl && <p className="text-danger">{errors.imageUrl}</p>}
         </div>
 
         <button
@@ -189,6 +225,7 @@ export default function Product() {
           Thêm sản phẩm
         </button>
       </form>
+
       <div className="listProduct d-flex flex-wrap gap-4">
         {products.map((element) => {
           return (
