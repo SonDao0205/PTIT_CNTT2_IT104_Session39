@@ -88,7 +88,6 @@ export default function Product() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    // Validate
     const validationErrors: Errors = {};
     if (!newProduct.name.trim()) {
       validationErrors.name = "Tên sản phẩm không được để trống.";
